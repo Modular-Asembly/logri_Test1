@@ -1,0 +1,10 @@
+sqlalchemy
+uvicorn
+bcrypt
+pyjwt
+pydantic
+psycopg2-binary
+mypy
+python-multipart
+fastapi
+python-dotenv
