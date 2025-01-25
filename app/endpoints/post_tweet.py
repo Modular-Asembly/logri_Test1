@@ -1,6 +1,9 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 from app.services.tweet.add_tweet_to_db import add_tweet_to_db
+from app.services.tweet.count_user_tweets_today import count_user_tweets_today
+from app.modassembly.database.sql.get_sql_session import get_sql_session
 
 router = APIRouter()
 
@@ -11,18 +14,24 @@ class TweetRequest(BaseModel):
 class TweetResponse(BaseModel):
     message: str
 
-@router.post("/tweet", response_model=TweetResponse, status_code=status.HTTP_201_CREATED)
-def post_tweet(tweet_data: TweetRequest) -> TweetResponse:
+@router.post("/tweet", response_model=TweetResponse)
+def post_tweet(tweet_data: TweetRequest, db: Session = Depends(get_sql_session)) -> TweetResponse:
     """
-    Endpoint to post a new tweet.
+    Endpoint to post a tweet.
 
-    - **user_id**: The ID of the user posting the tweet.
-    - **content**: The content of the tweet.
-
-    Returns a success message upon successful tweet creation.
+    - **user_id**: ID of the user posting the tweet.
+    - **content**: Content of the tweet.
     """
-    if not tweet_data.content.strip():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tweet content cannot be empty.")
+    # Validate tweet content length
+    if len(tweet_data.content) == 0:
+        raise HTTPException(status_code=400, detail="Tweet content cannot be empty.")
+    
+    # Check the user's tweet count for the day
+    tweet_count = count_user_tweets_today(tweet_data.user_id)
+    if tweet_count >= 100:
+        raise HTTPException(status_code=400, detail="Tweet limit reached for today.")
 
-    add_tweet_to_db(user_id=tweet_data.user_id, content=tweet_data.content)
+    # Add tweet to the database
+    add_tweet_to_db(tweet_data.user_id, tweet_data.content, db)
+
     return TweetResponse(message="Tweet posted successfully.")
