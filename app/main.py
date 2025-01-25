@@ -21,6 +21,7 @@ app.add_middleware(
 from app.models.Follow import Follow
 from app.models.Tweet import Tweet
 from app.models.User import User
+from app.models.Comment import Comment
 from app.models.Like import Like
 from app.endpoints.register_user import router
 app.include_router(router)
@@ -33,6 +34,10 @@ app.include_router(router)
 from app.endpoints.follow_unfollow_user import router
 app.include_router(router)
 from app.endpoints.like_tweet import router
+app.include_router(router)
+from app.endpoints.post_comment import router
+app.include_router(router)
+from app.endpoints.fetch_comments import router
 app.include_router(router)
 
 # Database
